@@ -14,7 +14,7 @@
     :root { --text: #f1f1f1; --muted: #aaa; --bg: #131f24; --card: #1b2b32; --line: #37464f; --gray: #37464f; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Nunito", "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body { margin: 0; font-family: "Nunito", "Segoe UI", "Yu Gothic", "Meiryo", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
   #app { max-width: 640px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
   h1, h2 { margin: 0 0 8px; }
   .logo { color: var(--green); font-weight: 800; font-size: 1.6rem; text-align: center; margin: 24px 0 4px; }
@@ -24,7 +24,6 @@
     box-shadow: 0 4px 0 var(--green-d); margin: 12px 0; }
   .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--green-d); }
   .btn.blue { background: var(--blue); box-shadow: 0 4px 0 var(--blue-d); }
-  .btn.ghost { background: var(--card); color: var(--blue); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line); }
   .btn:disabled { background: var(--gray); color: var(--muted); box-shadow: none; cursor: not-allowed; }
   .level { display: block; width: 100%; text-align: left; background: var(--card); color: var(--text); border: 2px solid var(--line);
     border-radius: 16px; padding: 16px; margin: 10px 0; font: inherit; cursor: pointer; box-shadow: 0 3px 0 var(--line); }
@@ -48,13 +47,14 @@
   .node-label { font-size: .75rem; text-align: center; color: var(--muted); margin-top: -10px; }
   .q { font-size: 1.4rem; font-weight: 800; margin: 12px 0 20px; }
   .prompt { font-size: 1.5rem; font-weight: 800; padding: 14px 16px; border: 2px solid var(--line); border-radius: 16px; margin-bottom: 18px; }
+  .ro { display: block; font-size: .9rem; font-weight: 600; color: var(--muted); }
   .opts { display: grid; gap: 10px; }
   .opt { padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text);
     font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 var(--line); text-align: left; }
   .opt.sel { border-color: var(--blue); background: rgba(28,176,246,.15); }
   .answer-area { min-height: 56px; border-bottom: 2px solid var(--line); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
   .chip { padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text);
-    font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 var(--line); }
+    font: inherit; font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 3px 0 var(--line); }
   .chip.used { visibility: hidden; }
   .bank { display: flex; flex-wrap: wrap; gap: 8px; }
   input.type { width: 100%; padding: 14px; font: inherit; font-size: 1.1rem; border: 2px solid var(--line); border-radius: 14px;
@@ -76,89 +76,114 @@
 <script>
 "use strict";
 
-/* ---------- Obsah kurzu: jednotky -> lekce -> položky (en / cs) ---------- */
-// Každá lekce má seznam položek {en, cs}; cvičení se z nich generují automaticky.
+/* ---------- Obsah kurzu: jednotky -> lekce -> položky (jp / ro / cs) ---------- */
+// item: { jp: japonsky, ro: romaji, cs: česky }
+// sentence: { jp: [tokeny], ro: romaji, cs: česky } – tokeny se skládají do věty ve cvičení "build".
+const it = (jp, ro, cs) => ({ jp, ro, cs });
+const sn = (jp, ro, cs) => ({ jp: jp.split(" "), ro, cs });
+
 const COURSE = {
   beginner: [
-    { title: "Základy", lessons: [
+    { title: "Základy (hiragana)", lessons: [
       { name: "Pozdravy", items: [
-        { en: "Hello", cs: "Ahoj" }, { en: "Goodbye", cs: "Na shledanou" }, { en: "Please", cs: "Prosím" },
-        { en: "Thank you", cs: "Děkuji" }, { en: "Yes", cs: "Ano" }, { en: "No", cs: "Ne" } ],
-        sentences: [ { en: "Hello my friend", cs: "Ahoj příteli" }, { en: "Thank you very much", cs: "Děkuji mnohem" } ] },
+        it("こんにちは", "konnichiwa", "Dobrý den"), it("さようなら", "sayounara", "Na shledanou"),
+        it("ありがとう", "arigatou", "Děkuji"), it("はい", "hai", "Ano"),
+        it("いいえ", "iie", "Ne"), it("おはよう", "ohayou", "Dobré ráno") ],
+        sentences: [ sn("どうも ありがとう", "doumo arigatou", "Děkuji mnohokrát"),
+                     sn("わたし は がくせい です", "watashi wa gakusei desu", "Jsem student") ] },
       { name: "Jídlo", items: [
-        { en: "Apple", cs: "Jablko" }, { en: "Bread", cs: "Chléb" }, { en: "Water", cs: "Voda" },
-        { en: "Milk", cs: "Mléko" }, { en: "Cheese", cs: "Sýr" }, { en: "Fish", cs: "Ryba" } ],
-        sentences: [ { en: "I eat bread", cs: "Jím chléb" }, { en: "She drinks water", cs: "Ona pije vodu" } ] },
+        it("みず", "mizu", "Voda"), it("パン", "pan", "Chléb"), it("ごはん", "gohan", "Rýže"),
+        it("さかな", "sakana", "Ryba"), it("たまご", "tamago", "Vejce"), it("りんご", "ringo", "Jablko") ],
+        sentences: [ sn("わたし は みず を のみます", "watashi wa mizu o nomimasu", "Piju vodu"),
+                     sn("わたし は ごはん を たべます", "watashi wa gohan o tabemasu", "Jím rýži") ] },
       { name: "Zvířata", items: [
-        { en: "Dog", cs: "Pes" }, { en: "Cat", cs: "Kočka" }, { en: "Horse", cs: "Kůň" },
-        { en: "Bird", cs: "Pták" }, { en: "Cow", cs: "Kráva" }, { en: "Mouse", cs: "Myš" } ],
-        sentences: [ { en: "The cat is small", cs: "Kočka je malá" }, { en: "I have a dog", cs: "Mám psa" } ] }
+        it("いぬ", "inu", "Pes"), it("ねこ", "neko", "Kočka"), it("とり", "tori", "Pták"),
+        it("うま", "uma", "Kůň"), it("うし", "ushi", "Kráva"), it("ねずみ", "nezumi", "Myš") ],
+        sentences: [ sn("これ は ねこ です", "kore wa neko desu", "To je kočka"),
+                     sn("わたし は いぬ が います", "watashi wa inu ga imasu", "Mám psa") ] }
     ]},
     { title: "Každodenní život", lessons: [
       { name: "Rodina", items: [
-        { en: "Mother", cs: "Matka" }, { en: "Father", cs: "Otec" }, { en: "Brother", cs: "Bratr" },
-        { en: "Sister", cs: "Sestra" }, { en: "Grandmother", cs: "Babička" }, { en: "Child", cs: "Dítě" } ],
-        sentences: [ { en: "My mother is kind", cs: "Moje matka je hodná" }, { en: "He is my brother", cs: "On je můj bratr" } ] },
+        it("はは", "haha", "Matka (moje)"), it("ちち", "chichi", "Otec (můj)"), it("あに", "ani", "Starší bratr (můj)"),
+        it("あね", "ane", "Starší sestra (moje)"), it("そぼ", "sobo", "Babička (moje)"), it("こども", "kodomo", "Dítě") ],
+        sentences: [ sn("ちち は やさしい です", "chichi wa yasashii desu", "Můj otec je laskavý"),
+                     sn("わたし は あね が います", "watashi wa ane ga imasu", "Mám starší sestru") ] },
       { name: "Barvy a čísla", items: [
-        { en: "Red", cs: "Červená" }, { en: "Blue", cs: "Modrá" }, { en: "Green", cs: "Zelená" },
-        { en: "One", cs: "Jedna" }, { en: "Two", cs: "Dvě" }, { en: "Three", cs: "Tři" } ],
-        sentences: [ { en: "I have two red apples", cs: "Mám dvě červená jablka" }, { en: "The sky is blue", cs: "Obloha je modrá" } ] }
+        it("あか", "aka", "Červená"), it("あお", "ao", "Modrá"), it("みどり", "midori", "Zelená"),
+        it("いち", "ichi", "Jedna"), it("に", "ni", "Dvě"), it("さん", "san", "Tři") ],
+        sentences: [ sn("これ は あかい りんご です", "kore wa akai ringo desu", "To je červené jablko"),
+                     sn("いぬ が さんびき います", "inu ga sanbiki imasu", "Jsou tři psi") ] }
     ]}
   ],
   intermediate: [
     { title: "Cestování", lessons: [
       { name: "Na letišti", items: [
-        { en: "Ticket", cs: "Letenka" }, { en: "Luggage", cs: "Zavazadlo" }, { en: "Passport", cs: "Pas" },
-        { en: "Departure", cs: "Odlet" }, { en: "Delay", cs: "Zpoždění" }, { en: "Gate", cs: "Brána" } ],
-        sentences: [ { en: "My flight was delayed", cs: "Můj let měl zpoždění" }, { en: "Where is the gate", cs: "Kde je brána" } ] },
+        it("きっぷ", "kippu", "Lístek"), it("にもつ", "nimotsu", "Zavazadlo"), it("パスポート", "pasupooto", "Pas"),
+        it("ひこうき", "hikouki", "Letadlo"), it("くうこう", "kuukou", "Letiště"), it("ゲート", "geeto", "Brána (gate)") ],
+        sentences: [ sn("ゲート は どこ です か", "geeto wa doko desu ka", "Kde je brána?"),
+                     sn("えき を さがして います", "eki o sagashite imasu", "Hledám nádraží") ] },
       { name: "Ve městě", items: [
-        { en: "Street", cs: "Ulice" }, { en: "Bridge", cs: "Most" }, { en: "Corner", cs: "Roh" },
-        { en: "Straight ahead", cs: "Rovně" }, { en: "Crossroads", cs: "Křižovatka" }, { en: "Neighbourhood", cs: "Čtvrť" } ],
-        sentences: [ { en: "Turn left at the corner", cs: "Na rohu odbočte vlevo" }, { en: "I am looking for the station", cs: "Hledám nádraží" } ] }
+        it("みち", "michi", "Cesta, ulice"), it("はし", "hashi", "Most"), it("えき", "eki", "Nádraží"),
+        it("まっすぐ", "massugu", "Rovně"), it("こうさてん", "kousaten", "Křižovatka"), it("かど", "kado", "Roh") ],
+        sentences: [ sn("かど で ひだり に まがって ください", "kado de hidari ni magatte kudasai", "Na rohu odbočte doleva"),
+                     sn("まっすぐ いって ください", "massugu itte kudasai", "Jděte prosím rovně") ] }
     ]},
-    { title: "Práce a názory", lessons: [
+    { title: "Práce a minulý čas", lessons: [
       { name: "V kanceláři", items: [
-        { en: "Meeting", cs: "Schůzka" }, { en: "Deadline", cs: "Termín" }, { en: "Colleague", cs: "Kolega" },
-        { en: "Salary", cs: "Plat" }, { en: "Boss", cs: "Šéf" }, { en: "Contract", cs: "Smlouva" } ],
-        sentences: [ { en: "We have a meeting tomorrow", cs: "Zítra máme schůzku" }, { en: "I will finish before the deadline", cs: "Dokončím to před termínem" } ] },
+        it("かいぎ", "kaigi", "Porada"), it("しめきり", "shimekiri", "Termín"), it("どうりょう", "douryou", "Kolega"),
+        it("きゅうりょう", "kyuuryou", "Plat"), it("ぶちょう", "buchou", "Šéf oddělení"), it("けいやく", "keiyaku", "Smlouva") ],
+        sentences: [ sn("あした かいぎ が あります", "ashita kaigi ga arimasu", "Zítra máme poradu"),
+                     sn("しめきり まで に おわらせます", "shimekiri made ni owarasemasu", "Dokončím to do termínu") ] },
       { name: "Minulý čas", items: [
-        { en: "I went", cs: "Šel jsem" }, { en: "She saw", cs: "Ona viděla" }, { en: "We ate", cs: "Jedli jsme" },
-        { en: "They bought", cs: "Koupili" }, { en: "He wrote", cs: "Napsal" }, { en: "You knew", cs: "Věděl jsi" } ],
-        sentences: [ { en: "Yesterday I went to school", cs: "Včera jsem šel do školy" }, { en: "They bought a new car", cs: "Koupili nové auto" } ] }
+        it("いきました", "ikimashita", "Šel jsem"), it("みました", "mimashita", "Viděl jsem"),
+        it("たべました", "tabemashita", "Jedl jsem"), it("かいました", "kaimashita", "Koupil jsem"),
+        it("かきました", "kakimashita", "Napsal jsem"), it("のみました", "nomimashita", "Pil jsem") ],
+        sentences: [ sn("きのう がっこう に いきました", "kinou gakkou ni ikimashita", "Včera jsem šel do školy"),
+                     sn("あたらしい くるま を かいました", "atarashii kuruma o kaimashita", "Koupil jsem nové auto") ] }
     ]}
   ],
   advanced: [
-    { title: "Abstraktní slovní zásoba", lessons: [
-      { name: "Idiomy", items: [
-        { en: "Piece of cake", cs: "Brnkačka" }, { en: "Break the ice", cs: "Prolomit ledy" }, { en: "Under the weather", cs: "Být mimo (nemocný)" },
-        { en: "Once in a blue moon", cs: "Jednou za uherský rok" }, { en: "Spill the beans", cs: "Vyzradit tajemství" }, { en: "Hit the nail on the head", cs: "Trefit hřebík na hlavičku" } ],
-        sentences: [ { en: "The exam was a piece of cake", cs: "Zkouška byla brnkačka" }, { en: "Don't spill the beans", cs: "Nevyzraď to tajemství" } ] },
-      { name: "Akademická slovíčka", items: [
-        { en: "Nevertheless", cs: "Přesto" }, { en: "Furthermore", cs: "Navíc" }, { en: "Consequently", cs: "V důsledku toho" },
-        { en: "Despite", cs: "Navzdory" }, { en: "Whereas", cs: "Zatímco" }, { en: "Hence", cs: "Proto" } ],
-        sentences: [ { en: "Despite the rain we went out", cs: "Navzdory dešti jsme šli ven" }, { en: "He is tired nevertheless he works", cs: "Je unavený, přesto pracuje" } ] }
+    { title: "Rčení a spojky", lessons: [
+      { name: "Čtyřznaková rčení", items: [
+        it("七転び八起き", "nanakorobi yaoki", "Sedmkrát upadnout, osmkrát vstát"),
+        it("猿も木から落ちる", "saru mo ki kara ochiru", "I opice spadne ze stromu"),
+        it("一石二鳥", "isseki nichou", "Dvě mouchy jednou ranou"),
+        it("花より団子", "hana yori dango", "Užitek před krásou"),
+        it("十人十色", "juunin toiro", "Každý je jiný"),
+        it("以心伝心", "ishin denshin", "Porozumění beze slov") ],
+        sentences: [ sn("それ は 一石二鳥 でした", "sore wa isseki nichou deshita", "To byly dvě mouchy jednou ranou"),
+                     sn("十人十色 です ね", "juunin toiro desu ne", "Každý je jiný, že?") ] },
+      { name: "Spojky", items: [
+        it("しかし", "shikashi", "Však, ale"), it("さらに", "sarani", "Navíc"), it("したがって", "shitagatte", "Proto"),
+        it("にもかかわらず", "nimokakawarazu", "Navzdory tomu"), it("一方", "ippou", "Na druhou stranu"),
+        it("つまり", "tsumari", "Tedy, zkrátka") ],
+        sentences: [ sn("雨 にもかかわらず 外 へ 出かけました", "ame nimokakawarazu soto e dekakemashita", "Navzdory dešti jsme šli ven"),
+                     sn("彼 は 疲れて います しかし 働いて います", "kare wa tsukarete imasu shikashi hataraite imasu", "Je unavený, ale pracuje") ] }
     ]},
-    { title: "Složitější gramatika", lessons: [
-      { name: "Podmínkové věty", items: [
-        { en: "If I were you", cs: "Být na vašem místě" }, { en: "Unless", cs: "Pokud ne" }, { en: "Provided that", cs: "Za předpokladu, že" },
-        { en: "Had I known", cs: "Kdybych byl věděl" }, { en: "As long as", cs: "Dokud / pokud" }, { en: "Supposing", cs: "Předpokládejme" } ],
-        sentences: [ { en: "If I were rich I would travel", cs: "Kdybych byl bohatý, cestoval bych" }, { en: "I will go unless it rains", cs: "Půjdu, pokud nebude pršet" } ] },
-      { name: "Frázová slovesa", items: [
-        { en: "Give up", cs: "Vzdát se" }, { en: "Look forward to", cs: "Těšit se na" }, { en: "Carry out", cs: "Provést" },
-        { en: "Come across", cs: "Narazit na" }, { en: "Put off", cs: "Odložit" }, { en: "Run out of", cs: "Dojít (zásoby)" } ],
-        sentences: [ { en: "Never give up on your dreams", cs: "Nikdy se nevzdávej svých snů" }, { en: "We ran out of time", cs: "Došel nám čas" } ] }
+    { title: "Složitější jazyk", lessons: [
+      { name: "Podmínky", items: [
+        it("もし", "moshi", "Kdyby"), it("〜たら", "-tara", "Jestliže (podmínka)"), it("〜ば", "-ba", "Pokud (podmínka)"),
+        it("〜なら", "-nara", "Pokud (je-li tomu tak)"), it("〜ても", "-temo", "I kdyby"), it("〜ないと", "-naito", "Pokud ne, jinak") ],
+        sentences: [ sn("もし お金持ち だったら 旅行 します", "moshi okanemochi dattara ryokou shimasu", "Kdybych byl bohatý, cestoval bych"),
+                     sn("雨 が 降らなければ 行きます", "ame ga furanakereba ikimasu", "Pokud nebude pršet, půjdu") ] },
+      { name: "Zdvořilá řeč", items: [
+        it("いらっしゃいませ", "irasshaimase", "Vítejte (v obchodě)"), it("お願いします", "onegaishimasu", "Prosím (o službu)"),
+        it("失礼します", "shitsurei shimasu", "S dovolením"), it("かしこまりました", "kashikomarimashita", "Rozumím (uctivě)"),
+        it("お疲れ様です", "otsukaresama desu", "Dobrá práce (kolegům)"), it("よろしくお願いします", "yoroshiku onegaishimasu", "Prosím o přízeň") ],
+        sentences: [ sn("これ を お願いします", "kore o onegaishimasu", "Tohle prosím"),
+                     sn("かしこまりました 少々 お待ち ください", "kashikomarimashita shoushou omachi kudasai", "Rozumím, chvilku strpení") ] }
     ]}
   ]
 };
 
 const LEVELS = [
-  { id: "beginner",     name: "Začátečník",     desc: "Začínám od nuly – pozdravy, jídlo, zvířata" },
+  { id: "beginner",     name: "Začátečník",      desc: "Začínám od nuly – hiragana, pozdravy, jídlo, zvířata" },
   { id: "intermediate", name: "Mírně pokročilý", desc: "Znám základy – cestování, práce, minulý čas" },
-  { id: "advanced",     name: "Pokročilý",       desc: "Mluvím obstojně – idiomy, gramatika, frázová slovesa" }
+  { id: "advanced",     name: "Pokročilý",       desc: "Čtu kandži – rčení, spojky, podmínky, zdvořilá řeč" }
 ];
 
 /* ---------- Stav a ukládání ---------- */
-const SAVE_KEY = "duolingo_z_wishe_v1";
+const SAVE_KEY = "duolingo_z_wishe_ja_v1";
 const defaultState = () => ({ level: null, xp: 0, streak: 0, lastDay: null, done: {}, hearts: 5 });
 let state = load();
 function load() { try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch { return defaultState(); } }
@@ -168,9 +193,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 /* ---------- Pomocné ---------- */
 const $app = document.getElementById("app");
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const norm = s => s.toLowerCase().replace(/[.,!?'’]/g, "").replace(/\s+/g, " ").trim();
+const norm = s => s.toLowerCase().replace(/[.,!?'’。、？！\-]/g, "").replace(/\s+/g, " ").trim();
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-function speak(text) { try { const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {} }
+function speak(text) { try { const u = new SpeechSynthesisUtterance(text); u.lang = "ja-JP"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {} }
+const jpHtml = x => `${esc(x.jp)}<span class="ro">${esc(x.ro)}</span>`;
 
 /* ---------- Obrazovky ---------- */
 function render(html) { $app.innerHTML = html; }
@@ -178,8 +204,8 @@ function render(html) { $app.innerHTML = html; }
 function screenWelcome() {
   render(`
     <div class="logo">🦉 Duolingo z Wishe</div>
-    <div class="sub">Nauč se anglicky hravě – lekce po malých krocích.</div>
-    <h2>Jaká je tvoje úroveň angličtiny?</h2>
+    <div class="sub">Nauč se japonsky hravě – lekce po malých krocích. 日本語</div>
+    <h2>Jaká je tvoje úroveň japonštiny?</h2>
     ${LEVELS.map(l => `<button class="level" data-level="${l.id}"><b>${l.name}</b><span>${l.desc}</span></button>`).join("")}
   `);
   $app.querySelectorAll("[data-level]").forEach(b => b.onclick = () => {
@@ -225,22 +251,27 @@ let lesson = null;
 
 function buildExercises(les) {
   const items = les.items, ex = [];
-  const wrongCs = it => shuffle(items.filter(x => x !== it)).slice(0, 3).map(x => x.cs);
-  const wrongEn = it => shuffle(items.filter(x => x !== it)).slice(0, 3).map(x => x.en);
-  shuffle(items).slice(0, 4).forEach(it => ex.push({ type: "choice", q: "Co znamená toto slovo?", prompt: it.en, say: it.en,
-      options: shuffle([it.cs, ...wrongCs(it)]), answer: it.cs }));
-  shuffle(items).slice(0, 3).forEach(it => ex.push({ type: "choice", q: "Vyber správný anglický překlad", prompt: it.cs,
-      options: shuffle([it.en, ...wrongEn(it)]), answer: it.en }));
+  const others = x => shuffle(items.filter(y => y !== x)).slice(0, 3);
+  // japonsky -> česky
+  shuffle(items).slice(0, 4).forEach(x => ex.push({ type: "choice", q: "Co znamená toto slovo?", promptHtml: jpHtml(x), say: x.jp,
+      options: shuffle([x, ...others(x)]).map(o => ({ key: o.cs, html: esc(o.cs) })), answer: x.cs, answerText: x.cs }));
+  // česky -> japonsky
+  shuffle(items).slice(0, 3).forEach(x => ex.push({ type: "choice", q: "Vyber správný japonský překlad", promptHtml: esc(x.cs),
+      options: shuffle([x, ...others(x)]).map(o => ({ key: o.jp, html: jpHtml(o) })), answer: x.jp, answerText: `${x.jp} (${x.ro})`, say: x.jp }));
+  // skládání věty
   les.sentences.forEach(s => {
-    const extra = shuffle(["the", "a", "is", "not", "very", "to"]).filter(w => !norm(s.en).split(" ").includes(w)).slice(0, 2);
-    ex.push({ type: "build", q: "Přelož do angličtiny", prompt: s.cs, words: shuffle([...s.en.split(" "), ...extra]), answer: s.en });
+    const extra = shuffle(["は", "を", "に", "の", "も", "で", "です"]).filter(w => !s.jp.includes(w)).slice(0, 2);
+    ex.push({ type: "build", q: "Přelož do japonštiny", promptHtml: esc(s.cs), words: shuffle([...s.jp, ...extra]),
+      answer: s.jp.join(" "), answerText: `${s.jp.join(" ")} (${s.ro})`, say: s.jp.join("") });
   });
-  shuffle(items).slice(0, 2).forEach(it => ex.push({ type: "type", q: "Napiš anglicky", prompt: it.cs, answer: it.en }));
+  // psaní (romaji nebo japonsky)
+  shuffle(items).slice(0, 2).forEach(x => ex.push({ type: "type", q: "Napiš romaji (nebo japonsky)", promptHtml: esc(x.cs),
+      accept: [x.ro, x.jp], answerText: `${x.jp} (${x.ro})`, say: x.jp }));
   return shuffle(ex);
 }
 
 function startLesson(u, l) {
-  if (state.hearts <= 0) { alert("Došla ti srdíčka! Obnoví se při dalším dni (nebo klikni na OK pro doplnění v tomto demu)."); state.hearts = 5; save(); }
+  if (state.hearts <= 0) { alert("Došla ti srdíčka! V tomto demu se doplní na 5."); state.hearts = 5; save(); }
   const les = COURSE[state.level][u].lessons[l];
   lesson = { u, l, les, ex: buildExercises(les), i: 0, correct: 0, hearts: state.hearts, checked: false, picked: null, built: [] };
   screenExercise();
@@ -250,15 +281,16 @@ function screenExercise() {
   const e = lesson.ex[lesson.i];
   lesson.checked = false; lesson.picked = null; lesson.built = [];
   let body = "";
+  const sayBtn = e.type === "choice" && e.q.startsWith("Co") ? ' <button class="link" id="say">🔊</button>' : "";
   if (e.type === "choice") {
-    body = `<div class="prompt">${esc(e.prompt)} ${e.say ? '<button class="link" id="say">🔊</button>' : ""}</div>
-      <div class="opts">${e.options.map((o, i) => `<button class="opt" data-i="${i}">${esc(o)}</button>`).join("")}</div>`;
+    body = `<div class="prompt">${e.promptHtml}${sayBtn}</div>
+      <div class="opts">${e.options.map((o, i) => `<button class="opt" data-i="${i}">${o.html}</button>`).join("")}</div>`;
   } else if (e.type === "build") {
-    body = `<div class="prompt">${esc(e.prompt)}</div>
+    body = `<div class="prompt">${e.promptHtml}</div>
       <div class="answer-area" id="area"></div>
       <div class="bank">${e.words.map((w, i) => `<button class="chip" data-i="${i}">${esc(w)}</button>`).join("")}</div>`;
   } else {
-    body = `<div class="prompt">${esc(e.prompt)}</div><input class="type" id="typed" autocomplete="off" autocapitalize="off" placeholder="Napiš anglicky…">`;
+    body = `<div class="prompt">${e.promptHtml}</div><input class="type" id="typed" autocomplete="off" autocapitalize="off" placeholder="romaji…">`;
   }
   render(`
     <div class="topbar">
@@ -278,7 +310,7 @@ function screenExercise() {
     $app.querySelectorAll(".opt").forEach(b => b.onclick = () => {
       if (lesson.checked) return;
       $app.querySelectorAll(".opt").forEach(x => x.classList.remove("sel"));
-      b.classList.add("sel"); lesson.picked = e.options[+b.dataset.i]; check.disabled = false;
+      b.classList.add("sel"); lesson.picked = e.options[+b.dataset.i].key; check.disabled = false;
     });
   } else if (e.type === "build") {
     const area = document.getElementById("area");
@@ -302,22 +334,20 @@ function screenExercise() {
 
 function checkAnswer() {
   const e = lesson.ex[lesson.i];
-  let given;
-  if (e.type === "choice") given = lesson.picked;
-  else if (e.type === "build") given = lesson.built.map(i => e.words[i]).join(" ");
-  else given = document.getElementById("typed").value;
-  const ok = norm(given) === norm(e.answer);
+  let ok;
+  if (e.type === "choice") ok = lesson.picked === e.answer;
+  else if (e.type === "build") ok = norm(lesson.built.map(i => e.words[i]).join(" ")) === norm(e.answer);
+  else { const g = norm(document.getElementById("typed").value).replace(/ /g, ""); ok = e.accept.some(a => norm(a).replace(/ /g, "") === g); }
   lesson.checked = true;
   if (ok) lesson.correct++; else { lesson.hearts--; state.hearts = Math.max(0, lesson.hearts); save(); }
   document.querySelectorAll(".opt, .chip, input.type").forEach(x => x.disabled = true);
-  const footer = document.getElementById("footer");
-  footer.innerHTML = `
+  document.getElementById("footer").innerHTML = `
     <div class="feedback ${ok ? "ok" : "bad"}">
-      <b>${ok ? "✔ Správně!" : "✘ Správná odpověď:"}</b>${ok ? "" : esc(e.answer)}
+      <b>${ok ? "✔ Správně!" : "✘ Správná odpověď:"}</b>${ok ? "" : esc(e.answerText)}
       <button class="btn ${ok ? "" : "red"}" id="check">Pokračovat</button>
     </div>`;
   document.getElementById("check").onclick = next;
-  if (e.type !== "choice" || e.say) speak(e.answer);
+  speak(e.say);
   if (!ok) lesson.ex.push({ ...e });   // chybné cvičení se zopakuje na konci
 }
 
