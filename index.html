@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duolingo z Wishe</title>
+<style>
+  :root {
+    --green: #58cc02; --green-d: #46a302; --blue: #1cb0f6; --blue-d: #1899d6;
+    --red: #ff4b4b; --red-d: #ea2b2b; --gold: #ffc800; --gray: #e5e5e5;
+    --text: #3c3c3c; --muted: #777; --bg: #fff; --card: #fff; --line: #e5e5e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --text: #f1f1f1; --muted: #aaa; --bg: #131f24; --card: #1b2b32; --line: #37464f; --gray: #37464f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito", "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  #app { max-width: 640px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  h1, h2 { margin: 0 0 8px; }
+  .logo { color: var(--green); font-weight: 800; font-size: 1.6rem; text-align: center; margin: 24px 0 4px; }
+  .sub { text-align: center; color: var(--muted); margin-bottom: 24px; }
+  .btn { display: block; width: 100%; padding: 14px; border: 0; border-radius: 14px; font: inherit; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .5px; cursor: pointer; color: #fff; background: var(--green);
+    box-shadow: 0 4px 0 var(--green-d); margin: 12px 0; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--green-d); }
+  .btn.blue { background: var(--blue); box-shadow: 0 4px 0 var(--blue-d); }
+  .btn.ghost { background: var(--card); color: var(--blue); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line); }
+  .btn:disabled { background: var(--gray); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+  .level { display: block; width: 100%; text-align: left; background: var(--card); color: var(--text); border: 2px solid var(--line);
+    border-radius: 16px; padding: 16px; margin: 10px 0; font: inherit; cursor: pointer; box-shadow: 0 3px 0 var(--line); }
+  .level:hover { border-color: var(--blue); }
+  .level b { font-size: 1.1rem; display: block; }
+  .level span { color: var(--muted); font-size: .9rem; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 8px 0 16px; }
+  .stats { display: flex; gap: 14px; font-weight: 800; margin-left: auto; }
+  .stat.fire { color: #ff9600; } .stat.xp { color: var(--gold); } .stat.heart { color: var(--red); }
+  .progress { flex: 1; height: 16px; background: var(--gray); border-radius: 8px; overflow: hidden; }
+  .progress > div { height: 100%; background: var(--green); border-radius: 8px; transition: width .3s; }
+  .x { background: none; border: 0; font-size: 1.6rem; color: var(--muted); cursor: pointer; }
+  .path { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 16px 0 32px; }
+  .unit { width: 100%; background: var(--green); color: #fff; border-radius: 16px; padding: 14px 18px; }
+  .unit small { opacity: .85; }
+  .node { width: 76px; height: 76px; border-radius: 50%; border: 0; font-size: 1.8rem; cursor: pointer; color: #fff;
+    background: var(--green); box-shadow: 0 6px 0 var(--green-d); }
+  .node.done { background: var(--gold); box-shadow: 0 6px 0 #cc9f00; }
+  .node.locked { background: var(--gray); box-shadow: 0 6px 0 #c3c3c3; color: var(--muted); cursor: not-allowed; }
+  .node:nth-child(odd) { transform: translateX(-34px); } .node:nth-child(even) { transform: translateX(34px); }
+  .node-label { font-size: .75rem; text-align: center; color: var(--muted); margin-top: -10px; }
+  .q { font-size: 1.4rem; font-weight: 800; margin: 12px 0 20px; }
+  .prompt { font-size: 1.5rem; font-weight: 800; padding: 14px 16px; border: 2px solid var(--line); border-radius: 16px; margin-bottom: 18px; }
+  .opts { display: grid; gap: 10px; }
+  .opt { padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text);
+    font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 var(--line); text-align: left; }
+  .opt.sel { border-color: var(--blue); background: rgba(28,176,246,.15); }
+  .answer-area { min-height: 56px; border-bottom: 2px solid var(--line); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip { padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text);
+    font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 var(--line); }
+  .chip.used { visibility: hidden; }
+  .bank { display: flex; flex-wrap: wrap; gap: 8px; }
+  input.type { width: 100%; padding: 14px; font: inherit; font-size: 1.1rem; border: 2px solid var(--line); border-radius: 14px;
+    background: var(--card); color: var(--text); }
+  .footer { margin-top: auto; padding: 12px 0; }
+  .feedback { margin: -16px -16px 0; padding: 16px; }
+  .feedback.ok { background: #d7ffb8; color: #3c8a00; } .feedback.bad { background: #ffdfe0; color: #c62828; }
+  .feedback b { font-size: 1.2rem; display: block; }
+  .btn.red { background: var(--red); box-shadow: 0 4px 0 var(--red-d); }
+  .center { text-align: center; } .big { font-size: 4rem; }
+  .summary { display: flex; gap: 12px; justify-content: center; margin: 20px 0; }
+  .summary div { border: 2px solid var(--line); border-radius: 14px; padding: 12px 18px; font-weight: 800; }
+  .link { background: none; border: 0; color: var(--blue); cursor: pointer; font: inherit; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+/* ---------- Obsah kurzu: jednotky -> lekce -> položky (en / cs) ---------- */
+// Každá lekce má seznam položek {en, cs}; cvičení se z nich generují automaticky.
+const COURSE = {
+  beginner: [
+    { title: "Základy", lessons: [
+      { name: "Pozdravy", items: [
+        { en: "Hello", cs: "Ahoj" }, { en: "Goodbye", cs: "Na shledanou" }, { en: "Please", cs: "Prosím" },
+        { en: "Thank you", cs: "Děkuji" }, { en: "Yes", cs: "Ano" }, { en: "No", cs: "Ne" } ],
+        sentences: [ { en: "Hello my friend", cs: "Ahoj příteli" }, { en: "Thank you very much", cs: "Děkuji mnohem" } ] },
+      { name: "Jídlo", items: [
+        { en: "Apple", cs: "Jablko" }, { en: "Bread", cs: "Chléb" }, { en: "Water", cs: "Voda" },
+        { en: "Milk", cs: "Mléko" }, { en: "Cheese", cs: "Sýr" }, { en: "Fish", cs: "Ryba" } ],
+        sentences: [ { en: "I eat bread", cs: "Jím chléb" }, { en: "She drinks water", cs: "Ona pije vodu" } ] },
+      { name: "Zvířata", items: [
+        { en: "Dog", cs: "Pes" }, { en: "Cat", cs: "Kočka" }, { en: "Horse", cs: "Kůň" },
+        { en: "Bird", cs: "Pták" }, { en: "Cow", cs: "Kráva" }, { en: "Mouse", cs: "Myš" } ],
+        sentences: [ { en: "The cat is small", cs: "Kočka je malá" }, { en: "I have a dog", cs: "Mám psa" } ] }
+    ]},
+    { title: "Každodenní život", lessons: [
+      { name: "Rodina", items: [
+        { en: "Mother", cs: "Matka" }, { en: "Father", cs: "Otec" }, { en: "Brother", cs: "Bratr" },
+        { en: "Sister", cs: "Sestra" }, { en: "Grandmother", cs: "Babička" }, { en: "Child", cs: "Dítě" } ],
+        sentences: [ { en: "My mother is kind", cs: "Moje matka je hodná" }, { en: "He is my brother", cs: "On je můj bratr" } ] },
+      { name: "Barvy a čísla", items: [
+        { en: "Red", cs: "Červená" }, { en: "Blue", cs: "Modrá" }, { en: "Green", cs: "Zelená" },
+        { en: "One", cs: "Jedna" }, { en: "Two", cs: "Dvě" }, { en: "Three", cs: "Tři" } ],
+        sentences: [ { en: "I have two red apples", cs: "Mám dvě červená jablka" }, { en: "The sky is blue", cs: "Obloha je modrá" } ] }
+    ]}
+  ],
+  intermediate: [
+    { title: "Cestování", lessons: [
+      { name: "Na letišti", items: [
+        { en: "Ticket", cs: "Letenka" }, { en: "Luggage", cs: "Zavazadlo" }, { en: "Passport", cs: "Pas" },
+        { en: "Departure", cs: "Odlet" }, { en: "Delay", cs: "Zpoždění" }, { en: "Gate", cs: "Brána" } ],
+        sentences: [ { en: "My flight was delayed", cs: "Můj let měl zpoždění" }, { en: "Where is the gate", cs: "Kde je brána" } ] },
+      { name: "Ve městě", items: [
+        { en: "Street", cs: "Ulice" }, { en: "Bridge", cs: "Most" }, { en: "Corner", cs: "Roh" },
+        { en: "Straight ahead", cs: "Rovně" }, { en: "Crossroads", cs: "Křižovatka" }, { en: "Neighbourhood", cs: "Čtvrť" } ],
+        sentences: [ { en: "Turn left at the corner", cs: "Na rohu odbočte vlevo" }, { en: "I am looking for the station", cs: "Hledám nádraží" } ] }
+    ]},
+    { title: "Práce a názory", lessons: [
+      { name: "V kanceláři", items: [
+        { en: "Meeting", cs: "Schůzka" }, { en: "Deadline", cs: "Termín" }, { en: "Colleague", cs: "Kolega" },
+        { en: "Salary", cs: "Plat" }, { en: "Boss", cs: "Šéf" }, { en: "Contract", cs: "Smlouva" } ],
+        sentences: [ { en: "We have a meeting tomorrow", cs: "Zítra máme schůzku" }, { en: "I will finish before the deadline", cs: "Dokončím to před termínem" } ] },
+      { name: "Minulý čas", items: [
+        { en: "I went", cs: "Šel jsem" }, { en: "She saw", cs: "Ona viděla" }, { en: "We ate", cs: "Jedli jsme" },
+        { en: "They bought", cs: "Koupili" }, { en: "He wrote", cs: "Napsal" }, { en: "You knew", cs: "Věděl jsi" } ],
+        sentences: [ { en: "Yesterday I went to school", cs: "Včera jsem šel do školy" }, { en: "They bought a new car", cs: "Koupili nové auto" } ] }
+    ]}
+  ],
+  advanced: [
+    { title: "Abstraktní slovní zásoba", lessons: [
+      { name: "Idiomy", items: [
+        { en: "Piece of cake", cs: "Brnkačka" }, { en: "Break the ice", cs: "Prolomit ledy" }, { en: "Under the weather", cs: "Být mimo (nemocný)" },
+        { en: "Once in a blue moon", cs: "Jednou za uherský rok" }, { en: "Spill the beans", cs: "Vyzradit tajemství" }, { en: "Hit the nail on the head", cs: "Trefit hřebík na hlavičku" } ],
+        sentences: [ { en: "The exam was a piece of cake", cs: "Zkouška byla brnkačka" }, { en: "Don't spill the beans", cs: "Nevyzraď to tajemství" } ] },
+      { name: "Akademická slovíčka", items: [
+        { en: "Nevertheless", cs: "Přesto" }, { en: "Furthermore", cs: "Navíc" }, { en: "Consequently", cs: "V důsledku toho" },
+        { en: "Despite", cs: "Navzdory" }, { en: "Whereas", cs: "Zatímco" }, { en: "Hence", cs: "Proto" } ],
+        sentences: [ { en: "Despite the rain we went out", cs: "Navzdory dešti jsme šli ven" }, { en: "He is tired nevertheless he works", cs: "Je unavený, přesto pracuje" } ] }
+    ]},
+    { title: "Složitější gramatika", lessons: [
+      { name: "Podmínkové věty", items: [
+        { en: "If I were you", cs: "Být na vašem místě" }, { en: "Unless", cs: "Pokud ne" }, { en: "Provided that", cs: "Za předpokladu, že" },
+        { en: "Had I known", cs: "Kdybych byl věděl" }, { en: "As long as", cs: "Dokud / pokud" }, { en: "Supposing", cs: "Předpokládejme" } ],
+        sentences: [ { en: "If I were rich I would travel", cs: "Kdybych byl bohatý, cestoval bych" }, { en: "I will go unless it rains", cs: "Půjdu, pokud nebude pršet" } ] },
+      { name: "Frázová slovesa", items: [
+        { en: "Give up", cs: "Vzdát se" }, { en: "Look forward to", cs: "Těšit se na" }, { en: "Carry out", cs: "Provést" },
+        { en: "Come across", cs: "Narazit na" }, { en: "Put off", cs: "Odložit" }, { en: "Run out of", cs: "Dojít (zásoby)" } ],
+        sentences: [ { en: "Never give up on your dreams", cs: "Nikdy se nevzdávej svých snů" }, { en: "We ran out of time", cs: "Došel nám čas" } ] }
+    ]}
+  ]
+};
+
+const LEVELS = [
+  { id: "beginner",     name: "Začátečník",     desc: "Začínám od nuly – pozdravy, jídlo, zvířata" },
+  { id: "intermediate", name: "Mírně pokročilý", desc: "Znám základy – cestování, práce, minulý čas" },
+  { id: "advanced",     name: "Pokročilý",       desc: "Mluvím obstojně – idiomy, gramatika, frázová slovesa" }
+];
+
+/* ---------- Stav a ukládání ---------- */
+const SAVE_KEY = "duolingo_z_wishe_v1";
+const defaultState = () => ({ level: null, xp: 0, streak: 0, lastDay: null, done: {}, hearts: 5 });
+let state = load();
+function load() { try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch { return defaultState(); } }
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch {} }
+const today = () => new Date().toISOString().slice(0, 10);
+
+/* ---------- Pomocné ---------- */
+const $app = document.getElementById("app");
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const norm = s => s.toLowerCase().replace(/[.,!?'’]/g, "").replace(/\s+/g, " ").trim();
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function speak(text) { try { const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {} }
+
+/* ---------- Obrazovky ---------- */
+function render(html) { $app.innerHTML = html; }
+
+function screenWelcome() {
+  render(`
+    <div class="logo">🦉 Duolingo z Wishe</div>
+    <div class="sub">Nauč se anglicky hravě – lekce po malých krocích.</div>
+    <h2>Jaká je tvoje úroveň angličtiny?</h2>
+    ${LEVELS.map(l => `<button class="level" data-level="${l.id}"><b>${l.name}</b><span>${l.desc}</span></button>`).join("")}
+  `);
+  $app.querySelectorAll("[data-level]").forEach(b => b.onclick = () => {
+    state.level = b.dataset.level; save(); screenHome();
+  });
+}
+
+function lessonKey(u, l) { return `${state.level}:${u}:${l}`; }
+
+function screenHome() {
+  if (!state.level) return screenWelcome();
+  const units = COURSE[state.level];
+  let firstOpen = true;
+  const unitsHtml = units.map((unit, ui) => `
+    <div class="unit"><small>Jednotka ${ui + 1}</small><br><b>${unit.title}</b></div>
+    ${unit.lessons.map((les, li) => {
+      const done = !!state.done[lessonKey(ui, li)];
+      let cls = "locked", icon = "🔒";
+      if (done) { cls = "done"; icon = "⭐"; }
+      else if (firstOpen) { cls = ""; icon = "▶"; firstOpen = false; }
+      return `<button class="node ${cls}" data-u="${ui}" data-l="${li}" ${cls === "locked" ? "disabled" : ""}>${icon}</button>
+              <div class="node-label">${les.name}</div>`;
+    }).join("")}`).join("");
+  render(`
+    <div class="topbar">
+      <b>🦉 Duolingo z Wishe</b>
+      <div class="stats">
+        <span class="stat fire">🔥 ${state.streak}</span>
+        <span class="stat xp">⚡ ${state.xp}</span>
+        <span class="stat heart">❤️ ${state.hearts}</span>
+      </div>
+    </div>
+    <div class="sub" style="margin:0 0 8px">Úroveň: <b>${LEVELS.find(l => l.id === state.level).name}</b>
+      · <button class="link" id="changeLevel">změnit</button></div>
+    <div class="path">${unitsHtml}</div>
+  `);
+  $app.querySelectorAll(".node:not(.locked)").forEach(b => b.onclick = () => startLesson(+b.dataset.u, +b.dataset.l));
+  document.getElementById("changeLevel").onclick = () => { state.level = null; save(); screenWelcome(); };
+}
+
+/* ---------- Lekce ---------- */
+let lesson = null;
+
+function buildExercises(les) {
+  const items = les.items, ex = [];
+  const wrongCs = it => shuffle(items.filter(x => x !== it)).slice(0, 3).map(x => x.cs);
+  const wrongEn = it => shuffle(items.filter(x => x !== it)).slice(0, 3).map(x => x.en);
+  shuffle(items).slice(0, 4).forEach(it => ex.push({ type: "choice", q: "Co znamená toto slovo?", prompt: it.en, say: it.en,
+      options: shuffle([it.cs, ...wrongCs(it)]), answer: it.cs }));
+  shuffle(items).slice(0, 3).forEach(it => ex.push({ type: "choice", q: "Vyber správný anglický překlad", prompt: it.cs,
+      options: shuffle([it.en, ...wrongEn(it)]), answer: it.en }));
+  les.sentences.forEach(s => {
+    const extra = shuffle(["the", "a", "is", "not", "very", "to"]).filter(w => !norm(s.en).split(" ").includes(w)).slice(0, 2);
+    ex.push({ type: "build", q: "Přelož do angličtiny", prompt: s.cs, words: shuffle([...s.en.split(" "), ...extra]), answer: s.en });
+  });
+  shuffle(items).slice(0, 2).forEach(it => ex.push({ type: "type", q: "Napiš anglicky", prompt: it.cs, answer: it.en }));
+  return shuffle(ex);
+}
+
+function startLesson(u, l) {
+  if (state.hearts <= 0) { alert("Došla ti srdíčka! Obnoví se při dalším dni (nebo klikni na OK pro doplnění v tomto demu)."); state.hearts = 5; save(); }
+  const les = COURSE[state.level][u].lessons[l];
+  lesson = { u, l, les, ex: buildExercises(les), i: 0, correct: 0, hearts: state.hearts, checked: false, picked: null, built: [] };
+  screenExercise();
+}
+
+function screenExercise() {
+  const e = lesson.ex[lesson.i];
+  lesson.checked = false; lesson.picked = null; lesson.built = [];
+  let body = "";
+  if (e.type === "choice") {
+    body = `<div class="prompt">${esc(e.prompt)} ${e.say ? '<button class="link" id="say">🔊</button>' : ""}</div>
+      <div class="opts">${e.options.map((o, i) => `<button class="opt" data-i="${i}">${esc(o)}</button>`).join("")}</div>`;
+  } else if (e.type === "build") {
+    body = `<div class="prompt">${esc(e.prompt)}</div>
+      <div class="answer-area" id="area"></div>
+      <div class="bank">${e.words.map((w, i) => `<button class="chip" data-i="${i}">${esc(w)}</button>`).join("")}</div>`;
+  } else {
+    body = `<div class="prompt">${esc(e.prompt)}</div><input class="type" id="typed" autocomplete="off" autocapitalize="off" placeholder="Napiš anglicky…">`;
+  }
+  render(`
+    <div class="topbar">
+      <button class="x" id="quit">✕</button>
+      <div class="progress"><div style="width:${lesson.i / lesson.ex.length * 100}%"></div></div>
+      <span class="stat heart">❤️ ${lesson.hearts}</span>
+    </div>
+    <div class="q">${e.q}</div>
+    ${body}
+    <div class="footer" id="footer"><button class="btn" id="check" disabled>Zkontrolovat</button></div>
+  `);
+  const check = document.getElementById("check");
+  document.getElementById("quit").onclick = () => { if (confirm("Opravdu ukončit lekci? Postup se ztratí.")) screenHome(); };
+  const say = document.getElementById("say"); if (say) say.onclick = () => speak(e.say);
+
+  if (e.type === "choice") {
+    $app.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      if (lesson.checked) return;
+      $app.querySelectorAll(".opt").forEach(x => x.classList.remove("sel"));
+      b.classList.add("sel"); lesson.picked = e.options[+b.dataset.i]; check.disabled = false;
+    });
+  } else if (e.type === "build") {
+    const area = document.getElementById("area");
+    const redraw = () => {
+      area.innerHTML = lesson.built.map((idx, pos) => `<button class="chip" data-pos="${pos}">${esc(e.words[idx])}</button>`).join("");
+      $app.querySelectorAll(".bank .chip").forEach(c => c.classList.toggle("used", lesson.built.includes(+c.dataset.i)));
+      area.querySelectorAll(".chip").forEach(c => c.onclick = () => { if (lesson.checked) return; lesson.built.splice(+c.dataset.pos, 1); redraw(); });
+      check.disabled = lesson.built.length === 0;
+    };
+    $app.querySelectorAll(".bank .chip").forEach(c => c.onclick = () => {
+      if (lesson.checked || lesson.built.includes(+c.dataset.i)) return;
+      lesson.built.push(+c.dataset.i); redraw();
+    });
+  } else {
+    const inp = document.getElementById("typed"); inp.focus();
+    inp.oninput = () => { check.disabled = !inp.value.trim(); };
+    inp.onkeydown = ev => { if (ev.key === "Enter" && !check.disabled) check.click(); };
+  }
+  check.onclick = () => lesson.checked ? next() : checkAnswer();
+}
+
+function checkAnswer() {
+  const e = lesson.ex[lesson.i];
+  let given;
+  if (e.type === "choice") given = lesson.picked;
+  else if (e.type === "build") given = lesson.built.map(i => e.words[i]).join(" ");
+  else given = document.getElementById("typed").value;
+  const ok = norm(given) === norm(e.answer);
+  lesson.checked = true;
+  if (ok) lesson.correct++; else { lesson.hearts--; state.hearts = Math.max(0, lesson.hearts); save(); }
+  document.querySelectorAll(".opt, .chip, input.type").forEach(x => x.disabled = true);
+  const footer = document.getElementById("footer");
+  footer.innerHTML = `
+    <div class="feedback ${ok ? "ok" : "bad"}">
+      <b>${ok ? "✔ Správně!" : "✘ Správná odpověď:"}</b>${ok ? "" : esc(e.answer)}
+      <button class="btn ${ok ? "" : "red"}" id="check">Pokračovat</button>
+    </div>`;
+  document.getElementById("check").onclick = next;
+  if (e.type !== "choice" || e.say) speak(e.answer);
+  if (!ok) lesson.ex.push({ ...e });   // chybné cvičení se zopakuje na konci
+}
+
+function next() {
+  if (lesson.hearts <= 0) return screenFail();
+  lesson.i++;
+  lesson.i >= lesson.ex.length ? screenDone() : screenExercise();
+}
+
+function screenFail() {
+  render(`<div class="center" style="margin:auto"><div class="big">💔</div><h1>Došla ti srdíčka</h1>
+    <p>Nevadí, zkus to znovu!</p><button class="btn blue" id="ok">Zpět na cestu</button></div>`);
+  document.getElementById("ok").onclick = () => { state.hearts = 5; save(); screenHome(); };
+}
+
+function screenDone() {
+  const gained = 10 + lesson.correct * 2;
+  state.xp += gained;
+  const t = today();
+  if (state.lastDay !== t) {
+    const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+    state.streak = state.lastDay === y ? state.streak + 1 : 1;
+    state.lastDay = t;
+  }
+  state.done[lessonKey(lesson.u, lesson.l)] = true;
+  save();
+  render(`<div class="center" style="margin:auto"><div class="big">🎉</div><h1>Lekce dokončena!</h1>
+    <div class="summary"><div class="stat xp">⚡ +${gained} XP</div><div class="stat fire">🔥 ${state.streak}</div>
+    <div class="stat heart">❤️ ${lesson.hearts}</div></div>
+    <button class="btn" id="ok">Pokračovat</button></div>`);
+  document.getElementById("ok").onclick = screenHome;
+}
+
+screenHome();
+</script>
+</body>
+</html>
